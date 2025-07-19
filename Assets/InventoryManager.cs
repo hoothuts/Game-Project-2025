@@ -1,115 +1,185 @@
 // InventoryManager.cs
 using UnityEngine;
-using System.Collections.Generic; // For List<T>
-using UnityEngine.UI; // For Image in ItemSlotUI (though not directly used here, good practice)
-using TMPro; // For TextMeshProUGUI (though not directly used here, good practice)
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 
 public class InventoryManager : MonoBehaviour
 {
-    public List<Item> playerItems = new List<Item>(); // The list that holds all player's items
-    public int inventorySize = 5; // Max number of inventory slots (set to 5 for your bar)
+    // ... (All your variables remain the same) ...
+    public List<Item> playerItems = new List<Item>();
+    public int inventorySize = 5;
+    public InventorySlotUI[] manualUiSlots;
+    public GameObject inventoryUIContainer;
 
-    // --- NEW: References to your manually placed slots (ASSIGN THESE IN INSPECTOR!) ---
-    public InventorySlotUI[] manualUiSlots; // Drag your 5 Slot_# GameObjects here in order
-    // --- END NEW ---
+    [Header("Warning UI")]
+    public GameObject warningUIPanel;
+    public TextMeshProUGUI warningUIText;
+    public float warningDisplayTime = 2.5f;
+    private Coroutine warningCoroutine;
 
-    // This is optional now if your bar is always present, but useful if you want to toggle it later
-    public GameObject inventoryUIContainer; // Assign your BottomActionBar Panel here
+    private int currentlyEquippedSlot = -1;
 
     void Start()
     {
-        InitializeManualSlotsUI(); // Initialize and clear your manual slots
+        // ... (Start method is unchanged) ...
+        InitializeManualSlotsUI();
+        
+        if (warningUIPanel != null)
+        {
+            warningUIPanel.SetActive(false);
+        }
 
-        // Example: Add a test item automatically for quick testing
-        // Ensure you have a Sprite asset in your Project window named "RedSquareIcon" or similar
-        // If not, you can create one: Right-click in Project window -> Create -> 2D -> Sprites -> Square, then set its color to red.
-        // Then drag that sprite into the 'itemIcon' field of the 'Test Item (Auto)' entry below in the Inspector
+        Debug.Log("Filling inventory at start...");
         Texture2D tex = new Texture2D(64, 64);
-        for (int x = 0; x < 64; x++) { for (int y = 0; y < 64; y++) { tex.SetPixel(x, y, Color.red); } }
-        tex.Apply();
-        Sprite testIcon = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-
-        // Add an item with a stack size > 1 to see the number change
-        AddItem(new Item("Test Item (Auto)", testIcon, true, 5)); // Add a test item with quantity 5
+        for (int i = 0; i < inventorySize; i++)
+        {
+            AddItem(new Item($"Test Item {i + 1}", Sprite.Create(tex, new Rect(0,0,64,64), Vector2.one * 0.5f), true, i + 1));
+        }
+        
+        EquipSlot(0); 
     }
 
-    public void AddItem(Item itemToAdd)
+    // --- MODIFIED: Added Debug Logs ---
+    void Update()
     {
-        Debug.Log($"[InventoryManager] Attempting to add {itemToAdd.itemName} (Stack: {itemToAdd.currentStackSize}). Current inventory count: {playerItems.Count}"); // Diagnostic log
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+        {
+            Debug.Log("[Input] Key '1' pressed. Attempting to equip slot 0.");
+            EquipSlot(0);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            Debug.Log("[Input] Key '2' pressed. Attempting to equip slot 1.");
+            EquipSlot(1);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            Debug.Log("[Input] Key '3' pressed. Attempting to equip slot 2.");
+            EquipSlot(2);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+        {
+            Debug.Log("[Input] Key '4' pressed. Attempting to equip slot 3.");
+            EquipSlot(3);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
+        {
+            Debug.Log("[Input] Key '5' pressed. Attempting to equip slot 4.");
+            EquipSlot(4);
+        }
+    }
 
-        // Basic Add (no stacking logic yet, just adds new item if space)
+    // --- MODIFIED: Added Debug Logs ---
+    public void EquipSlot(int slotIndex)
+    {
+        Debug.Log($"[EquipSlot] Method called for index {slotIndex}.");
+
+        // Guard Clause 1: Check if index is out of bounds
+        if (slotIndex < 0 || slotIndex >= inventorySize)
+        {
+            Debug.LogError($"[EquipSlot] Failed: Index {slotIndex} is outside the inventory bounds (0-{inventorySize-1}).");
+            return;
+        }
+
+        // Guard Clause 2: Check if the slot is empty
+        if (slotIndex >= playerItems.Count)
+        {
+            Debug.LogError($"[EquipSlot] Failed: Cannot equip empty slot. Index {slotIndex} is greater than item count {playerItems.Count}.");
+            return;
+        }
+        
+        Debug.Log($"[EquipSlot] Success! Equipping slot {slotIndex}.");
+        currentlyEquippedSlot = slotIndex;
+        UpdateInventoryUI();
+    }
+
+    // ... (The rest of your script, AddItem, ShowWarning, etc., remains the same) ...
+    public bool AddItem(Item itemToAdd)
+    {
         if (playerItems.Count < inventorySize)
         {
             playerItems.Add(itemToAdd);
-            UpdateInventoryUI(); // This will now update your manual slots
-            Debug.Log($"[InventoryManager] Successfully added {itemToAdd.itemName} to inventory.");
+            UpdateInventoryUI();
+            return true;
         }
         else
         {
-            Debug.Log("[InventoryManager] Inventory is full! Cannot add item.");
+            ShowWarning("Inventory Full!");
+            return false;
+        }
+    }
+    
+    public void ShowWarning(string message)
+    {
+        if (warningCoroutine != null)
+        {
+            StopCoroutine(warningCoroutine);
+        }
+        warningCoroutine = StartCoroutine(WarningCoroutine(message));
+    }
+
+    private IEnumerator WarningCoroutine(string message)
+    {
+        if (warningUIPanel != null && warningUIText != null)
+        {
+            warningUIText.text = message;
+            warningUIPanel.SetActive(true);
+            yield return new WaitForSeconds(warningDisplayTime);
+            warningUIPanel.SetActive(false);
+            warningCoroutine = null;
+        }
+        else
+        {
+            Debug.LogWarning(message);
         }
     }
 
-    // --- NEW: Method to initialize and update manual slots ---
     void InitializeManualSlotsUI()
     {
-        if (manualUiSlots == null || manualUiSlots.Length == 0)
-        {
-            Debug.LogError("InventoryManager: Manual UI Slots array is empty or not assigned! Assign your Slot_1 to Slot_5 GameObjects in Inspector.");
-            return;
-        }
         if (manualUiSlots.Length != inventorySize)
         {
-            Debug.LogWarning($"InventoryManager: Mismatch between inventorySize ({inventorySize}) and manualUiSlots count ({manualUiSlots.Length}). Adjusting inventorySize to match provided slots.");
-            inventorySize = manualUiSlots.Length; // Adjust inventory size to match provided slots
+            inventorySize = manualUiSlots.Length;
         }
-
-        // Initially clear all manual slots
         foreach (var slotUI in manualUiSlots)
         {
             if (slotUI != null) slotUI.ClearSlot();
         }
-        Debug.Log("[InventoryManager] Manual UI Slots Initialized and cleared.");
     }
-    // --- END NEW ---
-
+    
     public void UpdateInventoryUI()
     {
-        Debug.Log($"[InventoryManager] Updating UI. Player items count: {playerItems.Count}. Manual slots count: {manualUiSlots.Length}"); // Diagnostic log
-        for (int i = 0; i < manualUiSlots.Length; i++) // Loop through your manual slots
+        for (int i = 0; i < manualUiSlots.Length; i++)
         {
-            if (manualUiSlots[i] == null)
-            {
-                Debug.LogWarning($"[InventoryManager] Slot reference at index {i} is NULL. Cannot update."); // Diagnostic log
-                continue; // Skip this slot if its reference is missing
-            }
-
             if (i < playerItems.Count)
             {
-                Debug.Log($"[InventoryManager] Assigning item {playerItems[i].itemName} (Stack: {playerItems[i].currentStackSize}, Stackable: {playerItems[i].isStackable}) to slot {i} ({manualUiSlots[i].name})."); // Diagnostic log
-                manualUiSlots[i].SetItem(playerItems[i]); // Display item
+                manualUiSlots[i].SetItem(playerItems[i]);
             }
             else
             {
-                Debug.Log($"[InventoryManager] Clearing slot {i} ({manualUiSlots[i].name})."); // Diagnostic log
-                manualUiSlots[i].ClearSlot(); // Clear empty slots
+                manualUiSlots[i].ClearSlot();
+            }
+            if (i == currentlyEquippedSlot)
+            {
+                manualUiSlots[i].Select();
+            }
+            else
+            {
+                manualUiSlots[i].Deselect();
             }
         }
     }
 
-    // This method is optional if your bar is always present, but useful for other UI panels
     public void ToggleInventoryUI()
     {
         if (inventoryUIContainer != null)
         {
             bool newState = !inventoryUIContainer.activeSelf;
             inventoryUIContainer.SetActive(newState);
-            Time.timeScale = newState ? 0f : 1f; // Pause/Unpause game
-            Debug.Log($"[InventoryManager] Inventory UI Container Toggled: {newState}");
         }
         else
         {
-            Debug.LogError("InventoryManager: inventoryUIContainer (BottomActionBar) is NULL! Cannot toggle UI.");
+            Debug.LogError("InventoryManager: inventoryUIContainer is not assigned in the Inspector!");
         }
     }
 }

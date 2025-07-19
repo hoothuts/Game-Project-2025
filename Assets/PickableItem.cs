@@ -1,33 +1,31 @@
+// PickableItem.cs
 using UnityEngine;
 
 public class PickableItem : MonoBehaviour
 {
-    // This is the actual item data that this object represents
-    public Item itemData; // You will assign the item's details here in the Inspector
+    public Item itemData; 
+    public string pickerTag = "Player";
 
-    [Tooltip("The tag of the GameObject that can pick this item up (e.g., 'Player').")]
-    public string pickerTag = "Player"; // Ensure your player has this tag
-
-    // This method is called when another collider enters this object's trigger collider
     private void OnTriggerEnter(Collider other)
     {
-        // Check if the entering collider has the correct tag (e.g., "Player")
         if (other.CompareTag(pickerTag))
         {
-            Debug.Log($"{other.name} entered trigger. Attempting to pick up {itemData?.itemName ?? "Unknown Item"}.");
-
-            // Try to find the InventoryManager in the scene
-            // --- MODIFIED LINE HERE ---
             InventoryManager inventoryManager = Object.FindFirstObjectByType<InventoryManager>();
-            // --- END MODIFIED LINE ---
 
             if (inventoryManager != null)
             {
+                // --- NEW DIAGNOSTIC LINE ---
+                // This will ONLY run when the player touches the item.
+                Debug.Log($"[PICKUP ATTEMPT] Checking inventory state. Items: {inventoryManager.playerItems.Count}, Size: {inventoryManager.inventorySize}");
+                // --- END NEW DIAGNOCTIC LINE ---
+                
                 if (itemData != null)
                 {
-                    inventoryManager.AddItem(itemData); // Add the item to the inventory
-                    Debug.Log($"Successfully added {itemData.itemName} to inventory.");
-                    Destroy(gameObject); // Destroy this pickable object from the scene
+                    if (inventoryManager.AddItem(itemData))
+                    {
+                        Debug.Log($"Successfully added {itemData.itemName} to inventory.");
+                        Destroy(gameObject);
+                    }
                 }
                 else
                 {
@@ -36,7 +34,7 @@ public class PickableItem : MonoBehaviour
             }
             else
             {
-                Debug.LogError("InventoryManager not found in the scene! Cannot pick up item.");
+                Debug.LogError("InventoryManager not found in the scene!");
             }
         }
     }
