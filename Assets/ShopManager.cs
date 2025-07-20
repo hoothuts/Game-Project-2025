@@ -2,6 +2,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
+using StarterAssets;
 
 // This class defines an item within the shop's inventory, linking item data with a price.
 [System.Serializable]
@@ -14,87 +16,125 @@ public class ShopInventoryItem
 public class ShopManager : MonoBehaviour
 {
     [Header("Shop Inventory")]
-    public List<ShopInventoryItem> itemsForSale; // The list of items this shop sells.
+    public List<ShopInventoryItem> itemsForSale;
 
     [Header("UI References")]
     public GameObject shopPanel;
     public GameObject buySection;
     public GameObject sellSection;
-    public Transform buyContentArea;      // The "Content" object of the Buy section's Scroll View.
-    public GameObject shopItemSlotPrefab; // The prefab for a single item slot in the shop.
+    public Transform buyContentArea;
+    public Transform sellContentArea; // The "Content" object of your Sell section's Scroll View
+    public GameObject shopItemSlotPrefab;
 
     [Header("Tab Buttons")]
     public Button buyTabButton;
     public Button sellTabButton;
+    private List<Button> tabButtons;
+    private int selectedTabIndex = 0;
     
     [Header("System References")]
-    public InventoryManager inventoryManager; // Assign your InventoryManager here.
+    public InventoryManager inventoryManager;
 
     // --- Unity Methods ---
     void Start()
     {
-        buyTabButton.onClick.AddListener(ShowBuySection);
-        sellTabButton.onClick.AddListener(ShowSellSection);
+        // Setup button listeners for mouse clicks
+        if (buyTabButton != null) buyTabButton.onClick.AddListener(ShowBuySection);
+        if (sellTabButton != null) sellTabButton.onClick.AddListener(ShowSellSection);
+
+        // Setup list for keyboard navigation
+        tabButtons = new List<Button> { buyTabButton, sellTabButton };
+
         CloseShop();
     }
 
-    // --- Public Methods for Opening/Closing ---
+    void Update()
+    {
+        // Only listen for keyboard input if the shop panel is active
+        if (!shopPanel.activeSelf) return;
+
+        // Navigate with Arrow Keys
+        if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            selectedTabIndex = (selectedTabIndex == 0) ? 1 : 0;
+            SelectTab(selectedTabIndex);
+        }
+
+        // "Click" the selected button with Enter
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            if (tabButtons != null && tabButtons.Count > selectedTabIndex)
+            {
+                tabButtons[selectedTabIndex].onClick.Invoke();
+            }
+        }
+        
+        // Close with Escape key
+        if (Input.GetKeyDown(KeyCode.Backspace))
+    {
+        CloseShop();
+    }
+    }
+
+    // --- Public Methods ---
     public void OpenShop()
     {
         shopPanel.SetActive(true);
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        ShowSellSection(); // Default to the "Buy" tab when opening.
+        
+        PlayerInputManager inputManager = FindFirstObjectByType<PlayerInputManager>();
+        if (inputManager != null)
+        {
+            inputManager.canPlayerMove = false;
+        }
+        
+        selectedTabIndex = 0;
+        SelectTab(selectedTabIndex);
+        ShowBuySection();
     }
 
     public void CloseShop()
     {
         shopPanel.SetActive(false);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        
+        PlayerInputManager inputManager = FindFirstObjectByType<PlayerInputManager>();
+        if (inputManager != null)
+        {
+            inputManager.canPlayerMove = true;
+        }
+        
+        if(EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
     }
     
-    // --- Public Method for Transactions ---
     public void BuyItem(ShopInventoryItem itemToBuy)
     {
-        if (inventoryManager == null)
-        {
-            Debug.LogError("ShopManager: InventoryManager reference not set!");
-            return;
-        }
+        if (inventoryManager == null) return;
 
-        // 1. Check if the player has enough money.
         if (inventoryManager.playerCurrency < itemToBuy.price)
         {
             inventoryManager.ShowWarning("Not Enough Money!");
             return;
         }
 
-        // 2. Attempt to add the item to the player's inventory.
-        // The AddItem function already handles checking for space.
         if (inventoryManager.AddItem(itemToBuy.itemData))
         {
-            // 3. If adding was successful, complete the transaction.
             inventoryManager.playerCurrency -= itemToBuy.price;
-            Debug.Log("Bought " + itemToBuy.itemData.itemName + " for " + itemToBuy.price);
         }
-        // If AddItem returns false, the InventoryManager shows its own "Inventory Full!" warning.
     }
 
-    // --- Private Methods for UI Management ---
+    // --- Private Methods ---
     private void ShowBuySection()
     {
-        Debug.Log("Switched to Buy tab."); // <-- ADDED THIS LINE
+        Debug.Log("Switched to Buy tab.");
         buySection.SetActive(true);
         sellSection.SetActive(false);
         
-        // Clear any old items first to prevent duplicates.
         foreach (Transform child in buyContentArea)
         {
             Destroy(child.gameObject);
         }
-
-        // Create a slot for each item the shop has for sale.
         foreach (var shopItem in itemsForSale)
         {
             GameObject slotInstance = Instantiate(shopItemSlotPrefab, buyContentArea);
@@ -105,9 +145,31 @@ public class ShopManager : MonoBehaviour
 
     private void ShowSellSection()
     {
-        Debug.Log("Switched to Sell tab."); // <-- ADDED THIS LINE
+        Debug.Log("Switched to Sell tab.");
         buySection.SetActive(false);
         sellSection.SetActive(true);
-        // Logic to show the player's inventory will go here later.
+
+        foreach (Transform child in sellContentArea)
+        {
+            Destroy(child.gameObject);
+        }
+
+        if (inventoryManager == null) return;
+
+        foreach (var playerItem in inventoryManager.playerItems)
+        {
+            GameObject slotInstance = Instantiate(shopItemSlotPrefab, sellContentArea);
+            ShopItemSlot slotScript = slotInstance.GetComponent<ShopItemSlot>();
+            slotScript.DisplayItem(playerItem, this);
+        }
+    }
+
+    private void SelectTab(int tabIndex)
+    {
+        if (EventSystem.current != null && tabButtons != null && tabIndex >= 0 && tabIndex < tabButtons.Count)
+        {
+            EventSystem.current.SetSelectedGameObject(tabButtons[tabIndex].gameObject);
+            Debug.Log($"Selected tab: {tabButtons[tabIndex].name}");
+        }
     }
 }
