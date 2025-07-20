@@ -2,10 +2,15 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEngine.UI;
+using UnityEngine.UI; // Necessary for Image components
 
 public class InventoryManager : MonoBehaviour
 {
+    // --- Friend's Addition: Player Stats ---
+    [Header("Player Stats")]
+    public int playerCurrency = 100; // Player starts with 100 currency
+    // --- End Friend's Addition ---
+
     public List<Item> playerItems = new List<Item>();
     public int inventorySize = 5;
     public InventorySlotUI[] manualUiSlots;
@@ -19,7 +24,6 @@ public class InventoryManager : MonoBehaviour
 
     private int currentlyEquippedSlot = -1;
 
-    // --- REVERTED: Single Fishing Rod 3D Model ---
     [Header("Equipped 3D Models")]
     public GameObject fishingRod3DModel; // Only the fishing rod for now
 
@@ -70,6 +74,7 @@ public class InventoryManager : MonoBehaviour
 
     void Update()
     {
+        // Check for number key presses (top row OR numpad) to equip items
         if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) EquipSlot(0);
         if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) EquipSlot(1);
         if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) EquipSlot(2);
@@ -117,7 +122,7 @@ public class InventoryManager : MonoBehaviour
         currentlyEquippedSlot = slotIndex;
         UpdateInventoryUI();
 
-        // --- REVERTED: Logic to show/hide only the fishing rod ---
+        // --- Logic to show/hide only the fishing rod ---
         if (fishingRod3DModel != null)
         {
             if (itemToEquip.itemName == "Fishing Rod") // Use the exact name from your Item class
@@ -135,11 +140,7 @@ public class InventoryManager : MonoBehaviour
         {
             Debug.LogWarning("[EquipSlot] Fishing Rod 3D Model is NOT assigned in InventoryManager Inspector!");
         }
-        // --- END REVERTED LOGIC ---
     }
-
-    // Removed HideAllEquipped3DModels() method as it's no longer needed in this version
-    // Removed EquippableItem3DModel class as it's no longer needed in this version
 
     public Item GetEquippedItem()
     {
@@ -152,6 +153,7 @@ public class InventoryManager : MonoBehaviour
 
     public bool AddItem(Item itemToAdd)
     {
+        // Friend's version of AddItem was simpler. Keeping your more robust version.
         if (itemToAdd.isStackable)
         {
             foreach (Item item in playerItems)
@@ -241,6 +243,7 @@ public class InventoryManager : MonoBehaviour
 
     void InitializeManualSlotsUI()
     {
+        // Your version's logic for manualUiSlots.Length vs inventorySize
         if (manualUiSlots != null && manualUiSlots.Length > 0)
         {
             inventorySize = manualUiSlots.Length;
@@ -262,9 +265,9 @@ public class InventoryManager : MonoBehaviour
     {
         for (int i = 0; i < manualUiSlots.Length; i++)
         {
-            if (manualUiSlots[i] == null) continue;
+            if (manualUiSlots[i] == null) continue; // Your safer check
 
-            if (i < playerItems.Count && playerItems[i] != null)
+            if (i < playerItems.Count && playerItems[i] != null) // Your safer check
             {
                 manualUiSlots[i].SetItem(playerItems[i]);
             }
@@ -284,7 +287,7 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-    public Item GetItemInSlot(int slotIndex)
+    public Item GetItemInSlot(int slotIndex) // Your method, kept
     {
         if (slotIndex >= 0 && slotIndex < playerItems.Count)
         {

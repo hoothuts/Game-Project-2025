@@ -1,15 +1,17 @@
+// Item.cs
 using UnityEngine;
 
-// Ensure this class is serializable so it can be saved and displayed in the Inspector
+// The [System.Serializable] attribute allows Unity to display this class
+// in the Inspector and save its data.
 [System.Serializable]
 public class Item
 {
     public string itemName;
-    public Sprite icon; // The visual representation of the item
-    public bool isStackable; // Can this item stack in inventory?
-    public int quantity; // <-- ADD THIS LINE: The quantity of this item in a stack
+    public Sprite icon;
+    public bool isStackable;
+    public int quantity;
 
-    // Constructor to easily create new Item instances
+    // A constructor to easily create a new item with all its details.
     public Item(string name, Sprite itemIcon, bool stackable, int qty)
     {
         itemName = name;
@@ -18,7 +20,7 @@ public class Item
         quantity = qty;
     }
 
-    // You might also want a default constructor if you create Items without arguments sometimes
+    // A default constructor in case you need to create an empty item.
     public Item()
     {
         itemName = "New Item";
