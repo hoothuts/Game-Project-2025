@@ -1,59 +1,87 @@
-// InventorySlotUI.cs
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
+using UnityEngine.UI; // Required for Image
+using TMPro; // Required for TextMeshProUGUI
 
 public class InventorySlotUI : MonoBehaviour
 {
-    public Image itemIcon;
-    public TextMeshProUGUI itemQuantityText;
-    public Image slotBackground;
-    public Color selectedColor = Color.yellow;
-    public Color defaultColor = Color.white;
+    public Image iconImage;
+    public TextMeshProUGUI quantityText;
+    public GameObject selectionHighlight;
 
-    void Awake()
-    {
-        if (itemIcon == null) Debug.LogError("InventorySlotUI: itemIcon not assigned on " + gameObject.name);
-        if (itemQuantityText == null) Debug.LogError("InventorySlotUI: itemQuantityText not assigned on " + gameObject.name);
-        if (slotBackground == null) Debug.LogError("InventorySlotUI: slotBackground not assigned on " + gameObject.name);
-        else Deselect();
-    }
+    private Item currentItem;
 
     public void SetItem(Item item)
     {
-        itemIcon.sprite = item.itemIcon;
-        itemIcon.color = Color.white;
+        currentItem = item; // Store the item reference
 
-        if (item.isStackable && item.currentStackSize > 1)
+        Debug.Log($"[InventorySlotUI - {gameObject.name}] SetItem called. Item: {item?.itemName ?? "NULL"}");
+
+        if (item != null)
         {
-            itemQuantityText.text = item.currentStackSize.ToString();
+            if (iconImage != null)
+            {
+                Debug.Log($"[InventorySlotUI - {gameObject.name}] Setting icon. Item Icon is: {item.icon?.name ?? "NULL SPRITE"}");
+                iconImage.sprite = item.icon; // Assign the item's sprite
+                iconImage.enabled = true; // Make sure the image is visible
+                Debug.Log($"[InventorySlotUI - {gameObject.name}] Icon Image enabled: {iconImage.enabled}");
+            }
+            else
+            {
+                Debug.LogWarning($"InventorySlotUI on {gameObject.name}: iconImage is not assigned!");
+            }
+
+            if (quantityText != null)
+            {
+                quantityText.text = item.isStackable && item.quantity > 1 ? item.quantity.ToString() : "";
+                Debug.Log($"[InventorySlotUI - {gameObject.name}] Quantity Text set to: '{quantityText.text}' (Item Quantity: {item.quantity})");
+            }
+            else
+            {
+                Debug.LogWarning($"InventorySlotUI on {gameObject.name}: quantityText is not assigned!");
+            }
         }
-        else
+        else // If item is null, clear the slot
         {
-            itemQuantityText.text = "";
+            Debug.Log($"[InventorySlotUI - {gameObject.name}] Item is NULL, clearing slot.");
+            ClearSlot();
         }
     }
 
     public void ClearSlot()
     {
-        itemIcon.sprite = null;
-        itemIcon.color = new Color(1, 1, 1, 0);
-        itemQuantityText.text = "";
+        currentItem = null;
+
+        if (iconImage != null)
+        {
+            iconImage.sprite = null;
+            iconImage.enabled = false; // Hide the image
+            Debug.Log($"[InventorySlotUI - {gameObject.name}] Slot cleared. Icon Image enabled: {iconImage.enabled}");
+        }
+        if (quantityText != null)
+        {
+            quantityText.text = "";
+        }
     }
 
+    // ... (Select, Deselect, GetItem methods remain unchanged) ...
     public void Select()
     {
-        if (slotBackground != null)
+        if (selectionHighlight != null)
         {
-            slotBackground.color = selectedColor;
+            selectionHighlight.SetActive(true);
         }
     }
 
     public void Deselect()
     {
-        if (slotBackground != null)
+        if (selectionHighlight != null)
         {
-            slotBackground.color = defaultColor;
+            selectionHighlight.SetActive(false);
         }
+    }
+
+    public Item GetItem()
+    {
+        return currentItem;
     }
 }

@@ -8,6 +8,7 @@ public class GameUIController : MonoBehaviour
 {
     public GameObject pausePanel;
     public GameObject optionsPanel;
+    public InventoryManager inventoryManager; // Assign this in the Inspector
 
     // --- References for Key Remapping UI Elements ---
     public Button forwardKeyButtonRef;
@@ -23,8 +24,6 @@ public class GameUIController : MonoBehaviour
     public Button jumpKeyButtonRef;
     public TextMeshProUGUI jumpKeyText;
 
-    // --- Reference to InventoryManager ---
-    public InventoryManager inventoryManager;
 
     private bool isGamePaused = false;
     private bool isWaitingForKeyPress = false;
