@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4019a390adee9894aa637931e2fd989e, type: 3}
+  m_Name: FishData_Dolphin
+  m_EditorClassIdentifier: 
+  fishName: Dolphin
+  icon: {fileID: 21300000, guid: 7506b4e5dc14af14384a5851a21ddc03, type: 3}
+  fish3DModelPrefab: {fileID: 919132149155446097, guid: 9b0d7d49f0480bd4192db4216ba98430, type: 3}
+  basePrice: 60
+  rarity: 3
