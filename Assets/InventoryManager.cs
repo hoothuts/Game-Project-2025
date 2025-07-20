@@ -153,4 +153,4 @@ public class InventoryManager : MonoBehaviour
             Debug.LogError("InventoryManager: inventoryUIContainer is not assigned in the Inspector!");
         }
     }
-}
+}   
