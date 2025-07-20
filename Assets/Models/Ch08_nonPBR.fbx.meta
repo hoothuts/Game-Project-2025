@@ -8,12 +8,12 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Ch08_body
-    second: {fileID: -6087771358165109452, guid: 15dbc481c04ee904189609d48a6c2df0, type: 3}
+    second: {fileID: 752492319262309027, guid: b34f60d8bf10de34b9e5d0f36e03fd6d, type: 3}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Ch08_body1
-    second: {fileID: -8583780622465393609, guid: 99ebf778fc001c94994728075eda09e3, type: 3}
+    second: {fileID: -3846018093981099296, guid: a366756d1cc6c1e45abed628f0ed122c, type: 3}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
